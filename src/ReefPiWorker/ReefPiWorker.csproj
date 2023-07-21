@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
+    <PackageReference Include="Iot.Device.Bindings" Version="3.0.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="115.0.5790.9800" />

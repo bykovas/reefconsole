@@ -1,5 +1,6 @@
 using Microsoft.Azure.Cosmos;
 using ReefPiWorker.Clients;
+using ReefPiWorker.IoT;
 
 namespace ReefPiWorker
 {
@@ -39,6 +40,9 @@ namespace ReefPiWorker
 
                     services.Configure<CosmosDbClientOptions>(options => hostContext.Configuration.GetSection(nameof(CosmosDbClientOptions)).Bind(options));
                     services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
+
+                    services.Configure<ArduinoUnoR3PinOptions>(options => hostContext.Configuration.GetSection(nameof(ArduinoUnoR3PinOptions)).Bind(options));
+                    services.AddSingleton<IArduinoUnoR3FirmataCommandsWrapper, ArduinoUnoR3FirmataCommandsWrapper>();
                 });
     }
 }
