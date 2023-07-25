@@ -1,13 +1,6 @@
 ﻿using Iot.Device.Arduino;
-using Iot.Device.Board;
 using Microsoft.Extensions.Options;
-using ReefPiWorker.Clients;
-using System;
-using System.Collections.Generic;
 using System.Device.Gpio;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ReefPiWorker.IoT
 {
@@ -25,7 +18,7 @@ namespace ReefPiWorker.IoT
             IOptions<ArduinoUnoR3PinOptions> options)
         {
             (_logger, _options) =
-            (logger, options.Value);
+                (logger, options.Value);
 
             InitBoardControllers(_options.PortName, _options.BoudRate);
         }
@@ -34,9 +27,9 @@ namespace ReefPiWorker.IoT
         {
             try
             {
-                ArduinoBoard.TryFindBoard(out ArduinoBoard? _arduinoBoard);
-
-                //_arduinoBoard = new ArduinoBoard(portName, boudRate);
+                //ArduinoBoard.TryFindBoard(out ArduinoBoard? _arduinoBoard);
+                _arduinoBoard = new ArduinoBoard(portName, boudRate);
+                _logger.LogTrace($"Successfully connected to Arduino board; Firmware: {_arduinoBoard.FirmwareName} {_arduinoBoard.FirmwareVersion}, Firmata: {_arduinoBoard.FirmataVersion}");
 
                 _arduinoBoard.SetPinMode(_options.PinLedStatus, SupportedMode.DigitalOutput);
                 _arduinoBoard.SetPinMode(_options.PinButton, SupportedMode.DigitalInput);
@@ -59,10 +52,7 @@ namespace ReefPiWorker.IoT
 
         public void ReadDhtData(out double temperatureDegreesCelsius, out double humidityPercent)
         {
-            UnitsNet.Temperature temperature = new();
-            UnitsNet.RelativeHumidity humidity = new();
-
-            _dhtSensor.TryReadDht(_options.PinDht22, 22, out temperature, out humidity);
+            _dhtSensor.TryReadDht(_options.PinDht22, 22, out var temperature, out var humidity);
 
             temperatureDegreesCelsius = temperature.DegreesCelsius;
             humidityPercent = humidity.Percent;

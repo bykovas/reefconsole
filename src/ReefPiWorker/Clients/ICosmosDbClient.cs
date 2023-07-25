@@ -4,6 +4,12 @@ namespace ReefPiWorker.Clients
 {
     public interface ICosmosDbClient
     {
-        Task<ItemResponse<string>> CreateItemAsync(string jsonItem, string partitionKey);
+        /// <summary>
+        /// Creates Item in specified in appsettings CosmosDb container by partition "id"
+        /// </summary>
+        /// <param name="data">Item as object</param>
+        /// <param name="partitionKey">Partition key in "id" path</param>
+        /// <returns></returns>
+        Task<ItemResponse<object?>> CreateItemAsync(object? data, string partitionKey);
     }
 }

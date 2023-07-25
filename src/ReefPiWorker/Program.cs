@@ -1,6 +1,7 @@
 using Microsoft.Azure.Cosmos;
 using ReefPiWorker.Clients;
 using ReefPiWorker.IoT;
+using ReefPiWorker.Scrappers;
 
 namespace ReefPiWorker
 {
@@ -43,6 +44,9 @@ namespace ReefPiWorker
 
                     services.Configure<ArduinoUnoR3PinOptions>(options => hostContext.Configuration.GetSection(nameof(ArduinoUnoR3PinOptions)).Bind(options));
                     services.AddSingleton<IArduinoUnoR3FirmataCommandsWrapper, ArduinoUnoR3FirmataCommandsWrapper>();
+
+                    services.Configure<ReefFactoryScrapperOptions>(options => hostContext.Configuration.GetSection(nameof(ReefFactoryScrapperOptions)).Bind(options));
+                    services.AddSingleton<IReefFactoryScrapper, ReefFactoryScrapper>();
                 });
     }
 }
