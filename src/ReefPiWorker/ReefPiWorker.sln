@@ -3,7 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReefPiWorker", "ReefPiWorker.csproj", "{ECE83808-0FEC-4328-8EF9-D6D27C40D848}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReefPiWorker", "ReefPiWorker.csproj", "{ECE83808-0FEC-4328-8EF9-D6D27C40D848}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{5002845D-5FAC-4494-8C96-56458F2B94BE}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\.github\workflows\build.yml = ..\..\.github\workflows\build.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
