@@ -396,3 +396,5 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/src/ReefPiWorker/appsettings.Production.json
+/src/ReefPiWorker/appsettings.Development.json

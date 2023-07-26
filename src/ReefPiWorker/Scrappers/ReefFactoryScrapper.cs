@@ -22,7 +22,26 @@ namespace ReefPiWorker.Scrappers
             _reefFactoryWebUrl = $"https://{_options.RfUrl}/";
         }
 
-        public Task<ReefFactoryKhKeeperPlusDataModel?> ReadLastKhPhValues()
+        private void LoginAndAcceptCookies(ref IWebDriver driver, ref WebDriverWait wait)
+        {
+            driver.Navigate().GoToUrl($"{_reefFactoryWebUrl}?state=login");
+            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.Id("userName")));
+
+            var userName = driver.FindElement(By.Id("userName"));
+            userName.Clear();
+            userName.SendKeys(_options.RfUserName);
+            var userLoginPwd = driver.FindElement(By.Id("userLoginPwd"));
+            userLoginPwd.Clear();
+            userLoginPwd.SendKeys(_options.RfPassword);
+            var loginButton = driver.FindElement(By.Id("userButtonLogin"));
+            loginButton.Click();
+
+            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.ClassName("cookiesClose")));
+            var cookiesClose = driver.FindElement(By.ClassName("cookiesClose"));
+            cookiesClose.Click();
+        }
+
+        private static IWebDriver CreateChromeWebDriver()
         {
             var service = ChromeDriverService.CreateDefaultService();
             service.EnableVerboseLogging = false;
@@ -47,23 +66,15 @@ namespace ReefPiWorker.Scrappers
 
             IWebDriver driver = new ChromeDriver(service, options);
 
+            return driver;
+        }
+
+        public Task<ReefFactoryKhKeeperPlusDataModel?> ReadLastKhPhValues()
+        {
+            var driver = CreateChromeWebDriver();
             var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
 
-            driver.Navigate().GoToUrl($"{_reefFactoryWebUrl}?state=login");
-            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.Id("userName")));
-
-            var userName = driver.FindElement(By.Id("userName"));
-            userName.Clear();
-            userName.SendKeys(_options.RfUserName);
-            var userLoginPwd = driver.FindElement(By.Id("userLoginPwd"));
-            userLoginPwd.Clear();
-            userLoginPwd.SendKeys(_options.RfPassword);
-            var loginButton = driver.FindElement(By.Id("userButtonLogin"));
-            loginButton.Click();
-
-            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.ClassName("cookiesClose")));
-            var cookiesClose = driver.FindElement(By.ClassName("cookiesClose"));
-            cookiesClose.Click();
+            LoginAndAcceptCookies(ref driver, ref wait);
 
             wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.Id("hardwareName3")));
             var hardware = driver.FindElement(By.Id("hardwareName3"));
@@ -89,8 +100,8 @@ namespace ReefPiWorker.Scrappers
                 var data = new ReefFactoryKhKeeperPlusDataModel
                 {
                     OnDateTimeUtc = DateTime.Parse(dateTimeText).ToUniversalTime(),
-                    Kh = decimal.Parse(khText),
-                    Ph = decimal.Parse(phText)
+                    Kh = double.Parse(khText),
+                    Ph = double.Parse(phText)
                 };
 
                 return Task.FromResult(data)!;

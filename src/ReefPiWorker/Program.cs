@@ -42,6 +42,9 @@ namespace ReefPiWorker
                     services.Configure<CosmosDbClientOptions>(options => hostContext.Configuration.GetSection(nameof(CosmosDbClientOptions)).Bind(options));
                     services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
 
+                    services.Configure<InfluxDbClientOptions>(options => hostContext.Configuration.GetSection(nameof(InfluxDbClientOptions)).Bind(options));
+                    services.AddSingleton<IInfluxDbClient, InfluxDbClient>();
+
                     services.Configure<ArduinoUnoR3PinOptions>(options => hostContext.Configuration.GetSection(nameof(ArduinoUnoR3PinOptions)).Bind(options));
                     services.AddSingleton<IArduinoUnoR3FirmataCommandsWrapper, ArduinoUnoR3FirmataCommandsWrapper>();
 

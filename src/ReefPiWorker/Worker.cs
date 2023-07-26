@@ -1,9 +1,6 @@
-using System.Text.Json;
 using ReefPiWorker.Clients;
 using ReefPiWorker.IoT;
 using ReefPiWorker.Scrappers;
-using ReefPiWorker.Scrappers.Models;
-using static ReefPiWorker.Clients.CosmosDbClient;
 
 namespace ReefPiWorker
 {
@@ -11,6 +8,7 @@ namespace ReefPiWorker
     {
         private readonly ILogger<Worker> _logger;
         private readonly ICosmosDbClient _cosmosDbClient;
+        private readonly IInfluxDbClient _influxDbClient;
         private readonly IReefFactoryScrapper _reefFactoryScrapper;
         private readonly IArduinoUnoR3FirmataCommandsWrapper _arduinoUnoR3FirmataCommandsWrapper;
 
@@ -18,10 +16,11 @@ namespace ReefPiWorker
             ILogger<Worker> logger,
             ICosmosDbClient cosmosDbClient,
             IArduinoUnoR3FirmataCommandsWrapper arduinoUnoR3FirmataCommandsWrapper,
-            IReefFactoryScrapper reefFactoryScrapper
+            IReefFactoryScrapper reefFactoryScrapper,
+            IInfluxDbClient influxDbClient
             ) =>
-            (_logger, _cosmosDbClient, _arduinoUnoR3FirmataCommandsWrapper, _reefFactoryScrapper) = 
-            (logger, cosmosDbClient, arduinoUnoR3FirmataCommandsWrapper, reefFactoryScrapper);
+            (_logger, _cosmosDbClient, _arduinoUnoR3FirmataCommandsWrapper, _reefFactoryScrapper, _influxDbClient) = 
+            (logger, cosmosDbClient, arduinoUnoR3FirmataCommandsWrapper, reefFactoryScrapper, influxDbClient);
         
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -34,7 +33,7 @@ namespace ReefPiWorker
 
                 if (data == null)
                 {
-                    _logger.LogInformation("Kh measurement in progress, skipping");
+                    _logger.LogInformation($"{DateTime.Now.ToShortTimeString()} Kh measurement in progress, skipping...");
                 }
                 else
                 {
@@ -42,9 +41,18 @@ namespace ReefPiWorker
                         $"At {DateTime.Now.ToShortTimeString()} temperature is {temp}, humidity is {hum}" + Environment.NewLine +
                         $"Ph is {data.Ph}, Kh is {data.Kh} (by {data.OnDateTimeUtc:yyyy-MM-dd HH:mm})");
                     _ = _cosmosDbClient.CreateItemAsync(data, data.id);
+                    _ = _influxDbClient.AddMeasurement(InfluxDbMeasurements.Water, InfluxDbFields.Kh, data.Kh);
+                    _ = _influxDbClient.AddMeasurement(InfluxDbMeasurements.Water, InfluxDbFields.Ph, data.Ph);
+                    _ = _influxDbClient.AddMeasurement(InfluxDbMeasurements.Air, InfluxDbFields.Temperature, temp);
+                    _ = _influxDbClient.AddMeasurement(InfluxDbMeasurements.Air, InfluxDbFields.Humidity, hum);
                 }
 
-                await Task.Delay(1000 * 60 * 20, stoppingToken);
+                var now = DateTime.Now;
+                var previousRun = new DateTime(now.Year, now.Month, now.Day, now.Hour, 55, 0, now.Kind);
+                var nextTrigger = previousRun + TimeSpan.FromHours(1);
+                var wait = nextTrigger - now;
+
+                await Task.Delay(wait, stoppingToken);
             }
         }
     }    
