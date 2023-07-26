@@ -21,11 +21,20 @@ namespace ReefPiWorker
             ) =>
             (_logger, _cosmosDbClient, _arduinoUnoR3FirmataCommandsWrapper, _reefFactoryScrapper, _influxDbClient) = 
             (logger, cosmosDbClient, arduinoUnoR3FirmataCommandsWrapper, reefFactoryScrapper, influxDbClient);
-        
+
+
+        private TimeSpan GeTimeSpanUntilNextRun(int runOnMinutes)
+        {
+            var now = DateTime.Now;
+            var previousRun = new DateTime(now.Year, now.Month, now.Day, now.Hour, runOnMinutes, 0, now.Kind);
+            previousRun = now > previousRun ? previousRun : previousRun.AddHours(-1);
+            var nextTrigger = previousRun + TimeSpan.FromHours(1);
+            var wait = nextTrigger - now;
+            return wait;
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 _arduinoUnoR3FirmataCommandsWrapper.ReadDhtData(out var temp, out var hum);
@@ -47,12 +56,7 @@ namespace ReefPiWorker
                     _ = _influxDbClient.AddMeasurement(InfluxDbMeasurements.Air, InfluxDbFields.Humidity, hum);
                 }
 
-                var now = DateTime.Now;
-                var previousRun = new DateTime(now.Year, now.Month, now.Day, now.Hour, 55, 0, now.Kind);
-                var nextTrigger = previousRun + TimeSpan.FromHours(1);
-                var wait = nextTrigger - now;
-
-                await Task.Delay(wait, stoppingToken);
+                await Task.Delay(GeTimeSpanUntilNextRun(55), stoppingToken);
             }
         }
     }    
