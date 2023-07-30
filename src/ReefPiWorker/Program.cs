@@ -39,8 +39,8 @@ namespace ReefPiWorker
                 {
                     services.AddHostedService<Worker>();
 
-                    services.Configure<CosmosDbClientOptions>(options => hostContext.Configuration.GetSection(nameof(CosmosDbClientOptions)).Bind(options));
-                    services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
+                    //services.Configure<CosmosDbClientOptions>(options => hostContext.Configuration.GetSection(nameof(CosmosDbClientOptions)).Bind(options));
+                    //services.AddSingleton<ICosmosDbClient, CosmosDbClient>();
 
                     services.Configure<InfluxDbClientOptions>(options => hostContext.Configuration.GetSection(nameof(InfluxDbClientOptions)).Bind(options));
                     services.AddSingleton<IInfluxDbClient, InfluxDbClient>();

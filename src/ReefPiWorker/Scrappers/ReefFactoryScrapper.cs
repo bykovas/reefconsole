@@ -71,40 +71,52 @@ namespace ReefPiWorker.Scrappers
 
         public Task<ReefFactoryKhKeeperPlusDataModel?> ReadLastKhPhValues()
         {
-            var driver = CreateChromeWebDriver();
-            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
-
-            LoginAndAcceptCookies(ref driver, ref wait);
-
-            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.Id("hardwareName3")));
-            var hardware = driver.FindElement(By.Id("hardwareName3"));
-            hardware.Click();
-
-            wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.InvisibilityOfElementLocated(By.Id("componentLoading")));
-
-            wait.Until(d => d.FindElement(By.Id("rfkh01KhValue")).Text != "-.--");
-
-            var phText = driver.FindElement(By.Id("rfkh01PhValue")).Text.Replace("pH: ", "").Trim().Replace(".", ",");
-            var khText = driver.FindElement(By.Id("rfkh01KhValue")).Text.Trim().Replace(".", ",");
-            var dateTimeText = driver.FindElement(By.Id("rfkh01KhStatus")).Text.Replace("Measurement time: ", "").Trim().Replace(".", ",");
-
-            driver.Quit();
-
-            //'Measurement in progress: 0 % '
-            if (dateTimeText.Contains("progress"))
+            try
             {
-                return Task.FromResult<ReefFactoryKhKeeperPlusDataModel?>(null);
-            }
-            else
-            {
-                var data = new ReefFactoryKhKeeperPlusDataModel
+                var driver = CreateChromeWebDriver();
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
+
+                LoginAndAcceptCookies(ref driver, ref wait);
+
+                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists(By.Id("hardwareName3")));
+                var hardware = driver.FindElement(By.Id("hardwareName3"));
+                hardware.Click();
+
+                wait.Until(
+                    SeleniumExtras.WaitHelpers.ExpectedConditions.InvisibilityOfElementLocated(
+                        By.Id("componentLoading")));
+
+                wait.Until(d => d.FindElement(By.Id("rfkh01KhValue")).Text != "-.--");
+
+                var phText = driver.FindElement(By.Id("rfkh01PhValue")).Text.Replace("pH: ", "").Trim()
+                    .Replace(".", ",");
+                var khText = driver.FindElement(By.Id("rfkh01KhValue")).Text.Trim().Replace(".", ",");
+                var dateTimeText = driver.FindElement(By.Id("rfkh01KhStatus")).Text.Replace("Measurement time: ", "")
+                    .Trim().Replace(".", ",");
+
+                driver.Quit();
+
+                //'Measurement in progress: 0 % '
+                if (dateTimeText.Contains("progress"))
                 {
-                    OnDateTimeUtc = DateTime.Parse(dateTimeText).ToUniversalTime(),
-                    Kh = double.Parse(khText),
-                    Ph = double.Parse(phText)
-                };
+                    return Task.FromResult<ReefFactoryKhKeeperPlusDataModel?>(null);
+                }
+                else
+                {
+                    var data = new ReefFactoryKhKeeperPlusDataModel
+                    {
+                        OnDateTimeUtc = DateTime.Parse(dateTimeText).ToUniversalTime(),
+                        Kh = double.Parse(khText),
+                        Ph = double.Parse(phText)
+                    };
 
-                return Task.FromResult(data)!;
+                    return Task.FromResult(data)!;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error getting data from ReefFactory webpage", ex);
+                return Task.FromResult<ReefFactoryKhKeeperPlusDataModel?>(null);
             }
         }
     }

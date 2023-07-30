@@ -1,6 +1,7 @@
 ﻿using Iot.Device.Arduino;
 using Microsoft.Extensions.Options;
 using System.Device.Gpio;
+using Iot.Device.Pn532.RfConfiguration;
 
 namespace ReefPiWorker.IoT
 {
@@ -27,10 +28,29 @@ namespace ReefPiWorker.IoT
         {
             try
             {
-                //ArduinoBoard.TryFindBoard(out ArduinoBoard? _arduinoBoard);
-                _arduinoBoard = new ArduinoBoard(portName, boudRate);
-                _logger.LogTrace($"Successfully connected to Arduino board; Firmware: {_arduinoBoard.FirmwareName} {_arduinoBoard.FirmwareVersion}, Firmata: {_arduinoBoard.FirmataVersion}");
-
+                try
+                {
+                    _arduinoBoard = new ArduinoBoard(portName, boudRate);
+                    var fv = _arduinoBoard.FirmwareVersion;
+                    _logger.LogTrace(
+                        $"Successfully connected to Arduino board ({_options.PortName}:{_options.BoudRate}); Firmware: {_arduinoBoard.FirmwareName} {_arduinoBoard.FirmwareVersion}, Firmata: {_arduinoBoard.FirmataVersion}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Unable to connect to Arduino Firmata on {_options.PortName}", ex);
+                    ArduinoBoard.TryFindBoard(out var _arduinoBoard);
+                    try
+                    {
+                        var fv = _arduinoBoard?.FirmwareVersion;
+                        _logger.LogTrace(
+                                $"Successfully connected to Arduino board ({_options.PortName}:{_options.BoudRate}); Firmware: {_arduinoBoard.FirmwareName} {_arduinoBoard.FirmwareVersion}, Firmata: {_arduinoBoard.FirmataVersion}");
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError("Unable to find Arduino board", ex);
+                    }
+                }
+                
                 _arduinoBoard.SetPinMode(_options.PinLedStatus, SupportedMode.DigitalOutput);
                 _arduinoBoard.SetPinMode(_options.PinButton, SupportedMode.DigitalInput);
                 _arduinoBoard.SetPinMode(_options.PinDht22, SupportedMode.Dht);
@@ -50,12 +70,37 @@ namespace ReefPiWorker.IoT
             }
         }
 
+        private void CheckAndRecconectArduinoBoardIfNotConnected()
+        {
+            if (_arduinoBoard.GetPinMode(_options.PinLedStatus) != SupportedMode.DigitalOutput)
+                InitBoardControllers(_options.PortName, _options.BoudRate);
+        }
+
         public void ReadDhtData(out double temperatureDegreesCelsius, out double humidityPercent)
         {
-            _dhtSensor.TryReadDht(_options.PinDht22, 22, out var temperature, out var humidity);
+            try
+            {
+                CheckAndRecconectArduinoBoardIfNotConnected();
 
+            _dhtSensor.TryReadDht(_options.PinDht22, 22, out var temperature, out var humidity);
             temperatureDegreesCelsius = temperature.DegreesCelsius;
             humidityPercent = humidity.Percent;
+
+            var retries = 3;
+            while (retries > 0 || temperatureDegreesCelsius == 0 || humidityPercent == 0)
+            {
+                _dhtSensor.TryReadDht(_options.PinDht22, 22, out temperature, out humidity);
+                temperatureDegreesCelsius = temperature.DegreesCelsius;
+                humidityPercent = humidity.Percent;
+                retries--;
+            }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Unable to read DHT", ex);
+                temperatureDegreesCelsius = -1;
+                humidityPercent = -1;
+            }
         }
     }
 }
